@@ -1,0 +1,106 @@
+Metadata-Version: 2.4
+Name: web-tools-mcp-server
+Version: 0.1.0
+Summary: MCP Server với Web Search và Web Fetch tools cho việc duyệt web
+Requires-Python: >=3.13
+Description-Content-Type: text/markdown
+Requires-Dist: mcp
+Requires-Dist: requests
+Requires-Dist: beautifulsoup4
+Requires-Dist: lxml
+
+﻿# 🌐 Web Tools MCP Server
+
+Clean và đơn giản MCP Server cho việc duyệt web với 2 tools chính:
+
+## 🔧 Tools Available
+
+### 1. 🔍 `web_search_tool` ✅ COMPLETED
+- **Tìm kiếm Google** và trả về danh sách URLs
+- **Input**: search query, số lượng kết quả (default: 15)
+- **Output**: JSON với title, URL, snippet, source cho mỗi kết quả
+
+### 2. 📄 `web_fetch_tool` 🚧 COMING NEXT
+- **Lấy nội dung** từ URL cụ thể
+- **Input**: URL
+- **Output**: Clean text content từ webpage
+
+## 🚀 Quick Start
+
+### Install
+```bash
+cd Web_mcp
+pip install -e .
+```
+
+### Test
+```bash
+python test.py
+```
+
+### Run MCP Server
+```bash
+python mcp_server.py
+```
+
+## 📝 Usage Examples
+
+### Basic Web Search
+```python
+web_search_tool("CSS accessibility best practices")
+```
+
+### Custom Parameters
+```python
+web_search_tool("React performance optimization", 10, "en")
+```
+
+### Vietnamese Search
+```python
+web_search_tool("lập trình web frontend", 15, "vi")
+```
+
+## 📊 Output Format
+
+```json
+{
+  "query": "CSS accessibility best practices",
+  "total_results": 15,
+  "results": [
+    {
+      "rank": 1,
+      "title": "CSS And Accessibility: Inclusion Through User Choice",
+      "url": "https://www.smashingmagazine.com/...",
+      "snippet": "Using the prefers-reduced-motion CSS media feature...",
+      "source": "smashingmagazine.com"
+    }
+  ],
+  "status": "success"
+}
+```
+
+## 🎯 Development Status
+
+- ✅ **Phase 1**: Web Search Tool - COMPLETED
+- 🚧 **Phase 2**: Web Fetch Tool - IN PROGRESS
+- 🔄 **Phase 3**: Additional search engines support
+
+## 🛠️ Project Structure
+
+```
+Web_mcp/
+├── mcp_server.py              # Main MCP server
+├── start_server.py            # Start script
+├── test_web_search.py         # Test script
+├── tools/
+│   ├── mcp_web_search/        # ✅ Web search tool
+│   │   ├── __init__.py
+│   │   ├── core.py            # MCP tool interface
+│   │   └── search.py          # Google search logic
+│   └── mcp_web_fetch/         # 🚧 Web fetch tool (coming)
+└── pyproject.toml             # Dependencies
+```
+
+---
+
+**Next**: Implement `mcp_web_fetch` tool for content extraction! 🚀

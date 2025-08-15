@@ -1,0 +1,12 @@
+[project]
+name = "web-tools-mcp-server"
+version = "0.1.0"
+description = "MCP Server với Web Search và Web Fetch tools cho việc duyệt web"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "mcp",
+    "requests", 
+    "beautifulsoup4",
+    "lxml",
+]
