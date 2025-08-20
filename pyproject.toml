@@ -7,6 +7,12 @@ requires-python = ">=3.13"
 dependencies = [
     "mcp",
     "requests", 
+    "httpx[http2]",
+    "h2",  # Required for HTTP/2 support
+    "playwright",  # Modern browser automation (2025 recommended)
+    "playwright-stealth",  # Anti-detection capabilities
+    "requests-html",  # Legacy JS rendering (backup)
+    "lxml-html-clean",  # Fix for lxml compatibility
     "beautifulsoup4",
     "lxml",
 ]
