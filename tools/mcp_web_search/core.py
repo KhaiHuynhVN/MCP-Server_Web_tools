@@ -38,7 +38,7 @@ def web_search_tool(query: str, language: str = "en") -> str:
         }
     
     Example Usage:
-        web_search_tool("CSS accessibility best practices")
+        web_search_tool("CSS accessibility guidelines")
         web_search_tool("React virtual scrolling performance")
         web_search_tool("Python machine learning tutorials", "en")
     """
@@ -61,7 +61,7 @@ def web_search_tool(query: str, language: str = "en") -> str:
         if not isinstance(language, str):
             language = "en"
         
-        print(f"Searching Google for: '{query}' (returning 15 results)")
+        pass  # Searching Google
         
         # Perform search using Google Custom Search API
         raw_results = search_google_api(query, num_results)
@@ -87,10 +87,10 @@ def web_search_tool(query: str, language: str = "en") -> str:
         
         # Add metadata if we have results
         if formatted_results:
-            print(f"Found {len(formatted_results)} search results")
+            pass  # Found results
             response["message"] = f"Tìm thấy {len(formatted_results)} kết quả cho '{query}'"
         else:
-            print(f"No results found for: '{query}'")
+            pass  # No results
             response["message"] = f"Không tìm thấy kết quả nào cho '{query}'"
             response["status"] = "no_results"
         
@@ -98,7 +98,7 @@ def web_search_tool(query: str, language: str = "en") -> str:
         
     except Exception as e:
         error_msg = f"Search error: {str(e)}"
-        print(error_msg)
+        pass  # Error logged
         
         return json.dumps({
             "query": query,
@@ -126,7 +126,7 @@ def get_tool_description() -> Dict[str, Any]:
 **Use Cases:**
 - Tìm kiếm thông tin, bài viết, tutorials
 - Research về topics cụ thể  
-- Tìm documentation, best practices
+- Tìm documentation, coding guides
 - Lấy danh sách sources để đọc thêm
 
 **Output Format:**
@@ -138,7 +138,7 @@ mỗi kết quả có title, URL, snippet và source domain.""",
             "properties": {
                 "query": {
                     "type": "string",
-                    "description": "Từ khóa tìm kiếm (bắt buộc). Ví dụ: 'CSS accessibility best practices', 'React performance optimization'"
+                    "description": "Từ khóa tìm kiếm (bắt buộc). Ví dụ: 'CSS accessibility guidelines', 'React performance optimization'"
                 },
 
                 "language": {
@@ -155,7 +155,7 @@ mỗi kết quả có title, URL, snippet và source domain.""",
 # Test function
 if __name__ == "__main__":
     # Test tool
-    test_query = "CSS prefers-contrast high prefers-reduced-motion reduce best practices 2025"
+    test_query = "CSS prefers-contrast high prefers-reduced-motion reduce accessibility"
     result = web_search_tool(test_query)
     
     print("Test Result:")

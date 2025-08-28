@@ -7,10 +7,10 @@ REQUEST_TIMEOUT = 300  # seconds (5 minutes) - handle massive docs
 MAX_CONTENT_SIZE = 500 * 1024 * 1024  # 500MB max content size - MASSIVE  
 MAX_REDIRECTS = 20  # Maximum redirects to follow - very flexible
 
-# User Agent Configuration - Anti-Detection (Updated 2025)
+# User Agent Configuration - Anti-Detection
 USER_AGENT = "MCP-WebFetch/1.0 (Web Content Fetcher)"  # Fallback only
 
-# Modern Browser User-Agent Pool (Based on 2025 market share)
+# Modern Browser User-Agent Pool (Based on current market share)
 USER_AGENT_POOL = [
     # Chrome 131 - Windows (30% distribution)
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
@@ -49,6 +49,7 @@ USER_AGENT_POOL = [
 MAX_EXTRACTED_TEXT_LENGTH = 2000000  # characters (2M) - MASSIVE for long technical docs
 EXTRACT_IMAGES = False  # Keep FALSE - no binary data, text-only for AI efficiency
 EXTRACT_LINKS = True   # Whether to extract links (lightweight metadata only)
+MAX_LINKS_EXTRACT = 300  # Maximum number of links to extract per page (increased for documentation sites)
 
 # Supported content types - Expanded for maximum compatibility  
 SUPPORTED_CONTENT_TYPES = [
@@ -84,7 +85,7 @@ DEFAULT_HEADERS = {
     'Cache-Control': 'max-age=0'
 }
 
-# COMPLETE BROWSER PROFILES - Enhanced Headers System (2025 Best Practices)
+# COMPLETE BROWSER PROFILES - Enhanced Headers System
 BROWSER_PROFILES = {
     "chrome_windows": {
         "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
@@ -194,7 +195,7 @@ def get_random_user_agent():
 # Enhanced helper functions for Complete Browser Profiles
 def get_random_browser_profile():
     """
-    Get a complete random browser profile with matching headers (2025 Best Practice)
+    Get a complete random browser profile with matching headers
     
     Returns:
         dict: Complete browser profile with user_agent, headers, and profile_name
@@ -217,7 +218,7 @@ def get_browser_profile_by_name(profile_name):
     """
     return BROWSER_PROFILES.get(profile_name, BROWSER_PROFILES["chrome_windows"])
 
-# JavaScript Rendering Configuration (2025 Best Practices)
+# JavaScript Rendering Configuration
 JS_RENDERING_ENABLED = True  # Enable JavaScript rendering capabilities
 JS_RENDERING_TIMEOUT = 30  # seconds - timeout for JS rendering
 JS_RENDERING_METHODS = [
@@ -248,11 +249,11 @@ JS_DETECTION_PATTERNS = [
     "<div id=\"app\"></div>",
 ]
 
-# Error handling - Enhanced for reliability (2025 Smart Retry)
+# Error handling - Enhanced for reliability
 MAX_RETRY_ATTEMPTS = 5  # More attempts for unreliable connections
 RETRY_DELAY = 2  # seconds between retries - longer pause for stability
 
-# Smart Retry Strategies (2025 Enhancement)
+# Smart Retry Strategies
 RETRY_STRATEGIES = [
     "exponential_backoff",   # 2s, 4s, 8s, 16s, 32s
     "linear_progression",    # 2s, 4s, 6s, 8s, 10s

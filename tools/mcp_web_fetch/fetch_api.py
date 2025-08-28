@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 import charset_normalizer
 from .constants import (
     REQUEST_TIMEOUT, MAX_CONTENT_SIZE, MAX_REDIRECTS, DEFAULT_HEADERS,
-    MAX_EXTRACTED_TEXT_LENGTH, EXTRACT_LINKS, SUPPORTED_CONTENT_TYPES,
+    MAX_EXTRACTED_TEXT_LENGTH, EXTRACT_LINKS, MAX_LINKS_EXTRACT, SUPPORTED_CONTENT_TYPES,
     MAX_RETRY_ATTEMPTS, RETRY_DELAY, get_random_user_agent, 
     get_random_browser_profile, BROWSER_PROFILES, JS_RENDERING_ENABLED,
     JS_RENDERING_TIMEOUT, DEFAULT_JS_METHOD, JS_DETECTION_PATTERNS,
@@ -24,15 +24,15 @@ class WebContentFetcher:
     """HTTP client for fetching and extracting web content"""
     
     def __init__(self, retry_strategy: str = DEFAULT_RETRY_STRATEGY):
-        # Setup HTTP/2 capable client (2025 Standard)
-        # Use complete browser profile for enhanced stealth (2025 Best Practice)
+        # Setup HTTP/2 capable client
+        # Use complete browser profile for enhanced stealth
         self.browser_profile = get_random_browser_profile()
         
-        # Session management (2025 Enhancement) - intelligent session pools
+        # Session management - intelligent session pools
         self.session_pool = {}  # Domain-specific sessions for better cookie management
         self.current_session_domain = None
         
-        # Smart retry configuration (2025 Enhancement)
+        # Smart retry configuration
         self.retry_strategy = retry_strategy
         self.retry_attempt_history = []  # Track retry patterns for learning
         
@@ -44,7 +44,7 @@ class WebContentFetcher:
         # Enable persistent cookies for anti-detection
         self.session.cookies = requests.cookies.RequestsCookieJar()
         
-        # HTTPX client with HTTP/2 support (Primary 2025) + Persistent cookies
+        # HTTPX client with HTTP/2 support + Persistent cookies
         try:
             self.httpx_client = httpx.Client(
                 http2=True,  # Critical for modern sites
@@ -56,9 +56,7 @@ class WebContentFetcher:
             )
             self.http2_available = True
         except Exception as e:
-            print(f"WARNING: HTTP/2 not available: {str(e)}")
-            print("INFO: Install missing dependency: pip install httpx[http2] h2")
-            print("INFO: Falling back to HTTP/1.1...")
+            pass  # HTTP/2 not available, fallback to HTTP/1.1
             self.httpx_client = httpx.Client(
                 http2=False,  # Fallback to HTTP/1.1
                 timeout=httpx.Timeout(REQUEST_TIMEOUT),
@@ -73,17 +71,12 @@ class WebContentFetcher:
         self.js_rendering_enabled = JS_RENDERING_ENABLED
         self.js_session = None  # Will be initialized if needed
         
-        print(f"INFO: WebContentFetcher initialized with Profile: {self.browser_profile['profile_name']}")
-        print(f"INFO: User-Agent: {self.browser_profile['user_agent'][:50]}...")
-        print(f"INFO: HTTP/2: {'ENABLED' if self.http2_available else 'DISABLED (fallback to HTTP/1.1)'}")
-        print(f"INFO: Persistent cookies: ENABLED")
-        print(f"INFO: Retry strategy: {retry_strategy}")
-        if self.js_rendering_enabled:
-            print("INFO: JavaScript rendering: ENABLED")
+        # Initialization logging disabled for clean JSON response
+        pass
 
     def _get_domain_session(self, url: str) -> requests.Session:
         """
-        Get domain-specific session for intelligent cookie management (2025 Enhancement)
+        Get domain-specific session for intelligent cookie management
         
         Args:
             url: Target URL to extract domain from
@@ -104,14 +97,14 @@ class WebContentFetcher:
             new_session.max_redirects = MAX_REDIRECTS
             new_session.cookies = requests.cookies.RequestsCookieJar()
             self.session_pool[domain] = new_session
-            print(f"CREATED: New session for domain: {domain}")
+            pass  # Session created
         
         self.current_session_domain = domain
         return self.session_pool[domain]
 
     def _calculate_retry_delay(self, attempt: int) -> float:
         """
-        Calculate smart retry delay based on strategy (2025 Enhancement)
+        Calculate smart retry delay based on strategy
         
         Args:
             attempt: Current attempt number (0-based)
@@ -146,7 +139,7 @@ class WebContentFetcher:
 
     def _is_retriable_error(self, exception: Exception, response: Optional[Union[requests.Response, httpx.Response]] = None) -> bool:
         """
-        Determine if error/response is worth retrying (2025 Smart Logic)
+        Determine if error/response is worth retrying
         
         Args:
             exception: Exception that occurred
@@ -178,69 +171,12 @@ class WebContentFetcher:
         
         return False
 
-    def _needs_javascript_rendering(self, content: str) -> bool:
-        """
-        Enhanced JavaScript detection with reduced false positives (2025 Algorithm)
-        
-        Args:
-            content: HTML content to analyze
-            
-        Returns:
-            bool: True if JS rendering is likely needed
-        """
-        if not content or len(content.strip()) < 300:  # More conservative threshold
-            return True  # Very short content might be JS-rendered
-            
-        content_lower = content.lower()
-        soup = BeautifulSoup(content, 'html.parser')
-        
-        # Enhanced pattern detection with weighting
-        js_indicators = 0
-        
-        # Strong indicators (weight: 2)
-        strong_patterns = [
-            "__next_data__", "window.__nuxt__", "data-reactroot", 
-            "ng-app", "v-app", "<div id=\"root\"></div>", "<div id=\"app\"></div>"
-        ]
-        for pattern in strong_patterns:
-            if pattern in content_lower:
-                js_indicators += 2
-                
-        # Medium indicators (weight: 1)
-        medium_patterns = [
-            "this page requires javascript", "please enable javascript",
-            "javascript is required", "loading...", "please wait..."
-        ]
-        for pattern in medium_patterns:
-            if pattern in content_lower:
-                js_indicators += 1
-        
-        # Content analysis - more sophisticated check
-        text_content = soup.get_text().strip()
-        visible_text_length = len(text_content)
-        html_length = len(content)
-        
-        # Calculate text-to-HTML ratio (healthy content has good ratio)
-        if html_length > 0:
-            text_ratio = visible_text_length / html_length
-            if text_ratio < 0.05:  # Less than 5% actual text
-                js_indicators += 2
-            elif text_ratio < 0.1:  # Less than 10% actual text
-                js_indicators += 1
-        
-        # Check for empty body or minimal content structures
-        body = soup.find('body')
-        if body:
-            body_children = body.find_all(recursive=False)
-            if len(body_children) <= 3 and visible_text_length < 500:
-                js_indicators += 1
-        
-        # Decision threshold (require at least 2 indicators to trigger JS rendering)
-        return js_indicators >= 2
+    # NOTE: JavaScript detection function removed - now using ALWAYS JS RENDER approach
+    # This ensures maximum reliability and never misses JS-rendered content
 
     def _render_with_javascript(self, url: str, retry_count: int = 0) -> Optional[str]:
         """
-        Enhanced JavaScript rendering with Playwright + requests-html fallback (2025 Algorithm)
+        Enhanced JavaScript rendering with Playwright + requests-html fallback
         
         Args:
             url: URL to render
@@ -249,7 +185,7 @@ class WebContentFetcher:
         Returns:
             str: Rendered HTML content or None if failed
         """
-        # Try Playwright first (2025 recommended)
+        # Try Playwright first (recommended)
         playwright_result = self._render_with_playwright(url, retry_count)
         if playwright_result:
             return playwright_result
@@ -259,13 +195,13 @@ class WebContentFetcher:
     
     def _render_with_playwright(self, url: str, retry_count: int = 0) -> Optional[str]:
         """
-        Render with Playwright (2025 Modern Solution)
+        Render with Playwright (Modern Solution)
         """
         try:
             from playwright.sync_api import sync_playwright
             from playwright_stealth.stealth import Stealth
             
-            print(f"INFO: Playwright rendering: {url} (attempt {retry_count + 1})")
+            pass  # Playwright rendering
             
             with sync_playwright() as p:
                 # Launch browser with stealth mode
@@ -298,31 +234,45 @@ class WebContentFetcher:
                 timeout = (JS_RENDERING_TIMEOUT + retry_count * 5) * 1000  # Convert to ms
                 page.goto(url, timeout=timeout, wait_until='networkidle')
                 
-                # Wait for dynamic content
+                # Wait for dynamic content and framework rendering
                 page.wait_for_timeout(2000 + retry_count * 1000)
                 
-                # Scroll to trigger lazy loading
+                # Enhanced wait for common JS frameworks to finish rendering
+                try:
+                    # Wait for React to finish rendering
+                    page.wait_for_function('() => !window.React || !window.React.unstable_isConcurrent || document.readyState === "complete"', timeout=3000)
+                except Exception:
+                    pass  # Framework detection not critical
+                
+                # Scroll to trigger lazy loading and dynamic content
                 page.evaluate('window.scrollTo(0, document.body.scrollHeight)')
                 page.wait_for_timeout(1000)
                 
-                # Get rendered content
+                # Additional scroll for complex SPAs
+                page.evaluate('window.scrollTo(0, 0)')  # Back to top
+                page.wait_for_timeout(500)
+                
+                # Final wait to ensure all dynamic links are rendered
+                page.wait_for_timeout(1000)
+                
+                # Get fully rendered content with all dynamic links
                 content = page.content()
                 browser.close()
                 
-                print(f"SUCCESS: Playwright rendering successful: {len(content)} chars")
+                pass  # Playwright success
                 return content
                 
         except ImportError:
-            print("WARNING: Playwright not available, trying fallback...")
+            pass  # Playwright not available
             return None
         except Exception as e:
-            print(f"ERROR: Playwright ERROR: {type(e).__name__}: {str(e)}")
+            pass  # Playwright error
             if retry_count < 1:
-                print(f"WARNING: Playwright failed: {str(e)}, retrying...")
+                pass  # Playwright retry
                 time.sleep(2)
                 return self._render_with_playwright(url, retry_count + 1)
             else:
-                print(f"ERROR: Playwright failed after retries: {str(e)}")
+                pass  # Playwright failed
                 return None
     
     def _render_with_requests_html(self, url: str, retry_count: int = 0) -> Optional[str]:
@@ -336,9 +286,9 @@ class WebContentFetcher:
                 self.js_session = HTMLSession()
                 self.js_session.headers.update(self.browser_profile["headers"])
                 self.js_session.headers['User-Agent'] = self.browser_profile["user_agent"]
-                print("INFO: Fallback: requests-html session initialized")
+                pass  # requests-html initialized
             
-            print(f"INFO: Fallback rendering: {url} (attempt {retry_count + 1})")
+            pass  # Fallback rendering
             
             timeout = JS_RENDERING_TIMEOUT + (retry_count * 5)
             response = self.js_session.get(url, timeout=timeout)
@@ -357,27 +307,27 @@ class WebContentFetcher:
             rendered_content = response.html.html
             
             if len(rendered_content) > original_length * 1.1:
-                print(f"SUCCESS: Fallback rendering successful: {len(rendered_content)} chars")
+                pass  # Fallback success
                 return rendered_content
             else:
-                print(f"WARNING: Fallback rendering minimal improvement: {len(rendered_content)} chars")
+                pass  # Fallback minimal improvement
                 return rendered_content
             
         except ImportError:
-            print("ERROR: requests-html not available, skipping JavaScript rendering")
+            pass  # requests-html not available
             return None
         except Exception as e:
             if retry_count < 1:
-                print(f"WARNING: Fallback failed: {str(e)}, retrying...")
+                pass  # Fallback retry
                 time.sleep(2)
                 return self._render_with_requests_html(url, retry_count + 1)
             else:
-                print(f"ERROR: Fallback failed after retries: {str(e)}")
+                pass  # Fallback failed
                 return None
 
     def _fetch_with_httpx(self, url: str) -> httpx.Response:
         """
-        Fetch URL using HTTPX client with HTTP/2 support (2025 Standard)
+        Fetch URL using HTTPX client with HTTP/2 support
         
         Args:
             url: Target URL to fetch
@@ -399,7 +349,7 @@ class WebContentFetcher:
 
     def _fetch_with_requests(self, url: str) -> requests.Response:
         """
-        Fallback fetch using domain-specific requests session (2025 Enhancement)
+        Fallback fetch using domain-specific requests session
         
         Args:
             url: Target URL to fetch
@@ -428,37 +378,64 @@ class WebContentFetcher:
         
         # Validate URL
         if not self._is_valid_url(url):
-            raise ValueError(f"Invalid URL format: {url}")
+            return {
+                'url': url,
+                'title': '',
+                'description': '',
+                'content': '',
+                'content_type': '',
+                'links': [],
+                'word_count': 0,
+                'status': 'error',
+                'error': f'Invalid URL format: {url}',
+                'error_type': 'validation_error'
+            }
         
-        # Attempt fetch with retries using HTTP/2 first (2025 Anti-Detection)
+        # Attempt fetch with retries using HTTP/2 first
         for attempt in range(MAX_RETRY_ATTEMPTS):
             try:
                 # Use only HTTP/1.1 requests for maximum compatibility and reliability
-                print("INFO: Using HTTP/1.1 (requests) for maximum reliability")
+                pass  # Using HTTP/1.1
                 response = self._fetch_with_requests(url)
                 
                 # Check content type
                 content_type = response.headers.get('content-type', '').lower()
                 if not self._is_supported_content_type(content_type):
-                    raise ValueError(f"Unsupported content type: {content_type}")
+                    return {
+                        'url': url,
+                        'title': '',
+                        'description': '',
+                        'content': '',
+                        'content_type': content_type,
+                        'links': [],
+                        'word_count': 0,
+                        'status': 'error',
+                        'error': f'Unsupported content type: {content_type}',
+                        'error_type': 'content_type_error'
+                    }
                 
                 # Check content size
                 content_length = response.headers.get('content-length')
                 if content_length and int(content_length) > MAX_CONTENT_SIZE:
-                    raise ValueError(f"Content too large: {content_length} bytes")
+                    return {
+                        'url': url,
+                        'title': '',
+                        'description': '',
+                        'content': '',
+                        'content_type': content_type,
+                        'links': [],
+                        'word_count': 0,
+                        'status': 'error',
+                        'error': f'Content too large: {content_length} bytes (max: {MAX_CONTENT_SIZE})',
+                        'error_type': 'size_limit_error'
+                    }
                 
-                # Extract content based on type with intelligent approach selection
+                # Extract content based on type - ALWAYS USE JS RENDERING FOR MAXIMUM RELIABILITY
                 if 'text/html' in content_type:
-                    # INTELLIGENT APPROACH SELECTION (2025 Architecture)
-                    # Check if site needs JavaScript FIRST, then choose best approach
-                    raw_content = self._detect_and_decode_content(response)
-                    needs_js = self._needs_javascript_rendering(raw_content)
+                    pass  # HTML detected
                     
-                    print(f"INFO: Site analysis - Needs JavaScript: {needs_js}")
-                    
-                    if needs_js and self.js_rendering_enabled:
-                        print("INFO: JavaScript site detected - Using PLAYWRIGHT PRIMARY approach")
-                        # Use Playwright as PRIMARY approach for JS sites
+                    if self.js_rendering_enabled:
+                        # ALWAYS use Playwright rendering for best results
                         js_content = self._render_with_javascript(url)
                         if js_content:
                             # Create mock response with rendered content for extraction
@@ -467,13 +444,13 @@ class WebContentFetcher:
                             rendered_response.text = js_content
                             rendered_response.content = js_content.encode('utf-8')  # Add .content for charset detection
                             rendered_response.headers = response.headers
+                            pass  # Playwright completed
                             return self._extract_html_content_static(rendered_response, url, javascript_rendered=True)
                         else:
-                            print("WARNING: Playwright failed, falling back to static content")
+                            pass  # Playwright fallback
                             return self._extract_html_content_static(response, url, javascript_rendered=False)
                     else:
-                        print("INFO: Static site detected - Using direct HTML extraction")
-                        # Use static approach for non-JS sites
+                        pass  # JS disabled
                         return self._extract_html_content_static(response, url, javascript_rendered=False)
                         
                 elif 'application/json' in content_type:
@@ -482,7 +459,7 @@ class WebContentFetcher:
                     return self._extract_plain_content(response, url)
                     
             except (requests.exceptions.RequestException, httpx.RequestError) as e:
-                # Smart retry logic (2025 Enhancement)
+                # Smart retry logic
                 if attempt < MAX_RETRY_ATTEMPTS - 1 and self._is_retriable_error(e):
                     # Calculate smart delay based on strategy
                     delay = self._calculate_retry_delay(attempt)
@@ -500,7 +477,7 @@ class WebContentFetcher:
                     # Switch to new complete browser profile for retry (enhanced anti-detection)
                     new_profile = get_random_browser_profile()
                     
-                    # Clear all existing sessions to prevent cookie conflicts (2025 Enhancement)
+                    # Clear all existing sessions to prevent cookie conflicts
                     self.session_pool.clear()
                     print("CLEARED: All domain sessions (cookie reset)")
                     
@@ -510,7 +487,7 @@ class WebContentFetcher:
                     self.session.headers['User-Agent'] = new_profile["user_agent"]
                     self.session.cookies.clear()  # Clear cookies
                     
-                    # Update httpx client with new profile (2025 Enhancement)
+                    # Update httpx client with new profile
                     new_headers = new_profile["headers"].copy()
                     new_headers['User-Agent'] = new_profile["user_agent"]
                     self.httpx_client.headers.clear()
@@ -518,22 +495,47 @@ class WebContentFetcher:
                     self.httpx_client.cookies.clear()  # Clear httpx cookies
                     
                     self.browser_profile = new_profile
-                    print(f"INFO: Attempt {attempt + 1} failed: {type(e).__name__}")
-                    print(f"SWITCHING: To Profile: {new_profile['profile_name']}")
-                    print(f"INFO: Smart delay ({self.retry_strategy}): {delay:.1f}s")
+                    pass  # Attempt failed, switching profile
                     time.sleep(delay)
                     continue
                 elif not self._is_retriable_error(e):
-                    print(f"ERROR: Non-retriable error: {type(e).__name__} - {str(e)}")
+                    pass  # Non-retriable error
                     break
-                raise Exception(f"Failed to fetch URL after {MAX_RETRY_ATTEMPTS} attempts: {str(e)}")
         
-        raise Exception("Unexpected error in fetch_content")
+        # If we reach here, all attempts failed - return detailed error response
+        return {
+            'url': url,
+            'title': '',
+            'description': '',
+            'content': '',
+            'content_type': '',
+            'links': [],
+            'word_count': 0,
+            'status': 'error',
+            'error': f'Failed to fetch URL after {MAX_RETRY_ATTEMPTS} attempts: Network or server error',
+            'error_type': 'network_error',
+            'retry_attempts': MAX_RETRY_ATTEMPTS,
+            'retry_history': self.retry_attempt_history[-MAX_RETRY_ATTEMPTS:] if self.retry_attempt_history else []
+        }
+        
+        # This should never be reached, but return error response if it does
+        return {
+            'url': url,
+            'title': '',
+            'description': '',
+            'content': '',
+            'content_type': '',
+            'links': [],
+            'word_count': 0,
+            'status': 'error',
+            'error': 'Unexpected error in fetch_content',
+            'error_type': 'unexpected_error'
+        }
 
 
 
     def _detect_and_decode_content(self, response: Union[requests.Response, httpx.Response]) -> str:
-        """Modern charset detection and decoding using charset-normalizer (2025 standard)"""
+        """Modern charset detection and decoding using charset-normalizer"""
         try:
             # Get raw bytes content
             raw_content = response.content
@@ -544,22 +546,22 @@ class WebContentFetcher:
             if detected and detected.encoding:
                 # Decode using detected charset
                 decoded_content = raw_content.decode(detected.encoding)
-                print(f"INFO: Detected encoding: {detected.encoding}")
-                print(f"INFO: Content length: {len(decoded_content)} chars")
+                pass  # Encoding detected
+                pass  # Decoded content length
                 return decoded_content
             else:
-                print("WARNING: No encoding detected, falling back to UTF-8")
+                pass  # No encoding detected
                 
         except Exception as e:
-            print(f"WARNING: Charset detection failed: {str(e)}, falling back to UTF-8")
+            pass  # Charset detection failed
             
         # Fallback to UTF-8 with error handling
         try:
             fallback_content = response.content.decode('utf-8', errors='ignore')
-            print(f"INFO: UTF-8 fallback content length: {len(fallback_content)} chars")
+            pass  # UTF-8 fallback length
             return fallback_content
         except Exception as e:
-            print(f"ERROR: Even UTF-8 fallback failed: {str(e)}")
+            pass  # UTF-8 fallback failed
             return ""
 
     def _extract_html_content_static(self, response: Union[requests.Response, httpx.Response], url: str, javascript_rendered: bool = False) -> Dict[str, Any]:
@@ -571,13 +573,30 @@ class WebContentFetcher:
         # JavaScript rendering decision is made at higher level
         rendered_with_js = javascript_rendered
         
-        print(f"INFO: Static extraction - JavaScript pre-rendered: {javascript_rendered}")
-        print(f"INFO: Content length: {len(original_content)} chars")
+        pass  # Static extraction
+        pass  # Content length
         
-        soup = BeautifulSoup(original_content, 'html.parser')
+        # 🔥 CRITICAL FIX: Extract links FIRST from original soup before any content processing
+        # This ensures we get ALL links from fully rendered DOM (including JS-rendered content)
+        soup_original = BeautifulSoup(original_content, 'html.parser')
         
-        # 2025 BEST PRACTICE: Use professional libraries instead of manual parsing
-        main_content = self._extract_content_with_2025_best_practices(original_content)
+        # Extract links IMMEDIATELY from original rendered content  
+        links = []
+        if EXTRACT_LINKS:
+            try:
+                links = self._extract_links(soup_original, url)
+                # Links extracted successfully - no changes needed
+            except Exception as e:
+                # Link extraction failed - include error info but continue with content extraction
+                links = [{
+                    'url': '',
+                    'text': f'Link extraction failed: {str(e)}',
+                    'error': True
+                }]
+        
+        # Now proceed with content extraction (which may clean/modify HTML)
+        # Use professional libraries for content extraction
+        main_content = self._extract_content_with_fallbacks(original_content)
         
         # Extract metadata from minimal clean soup (for title/description only)
         soup_clean = BeautifulSoup(original_content, 'html.parser')
@@ -587,11 +606,6 @@ class WebContentFetcher:
             
         title = self._extract_title(soup_clean)
         description = self._extract_description(soup_clean)
-        
-        # Extract links if enabled
-        links = []
-        if EXTRACT_LINKS:
-            links = self._extract_links(soup, url)
         
         # Determine final status
         status = 'success'
@@ -676,10 +690,10 @@ class WebContentFetcher:
         
         return ""
 
-    def _extract_content_with_2025_best_practices(self, html_content: str) -> str:
-        """2025 RESEARCH-BACKED content extraction: Trafilatura (90.9% F1) + fallbacks"""
+    def _extract_content_with_fallbacks(self, html_content: str) -> str:
+        """Content extraction with multiple methods: Trafilatura (90.9% F1) + fallbacks"""
         
-        # METHOD 1: TRAFILATURA with ALL CONTENT (2025 RESEARCH-BACKED)
+        # METHOD 1: TRAFILATURA with ALL CONTENT
         try:
             import trafilatura
             
@@ -687,20 +701,20 @@ class WebContentFetcher:
             try:
                 all_content = trafilatura.html2txt(html_content)
                 if all_content and len(all_content.strip()) > 100:
-                    print(f"SUCCESS: trafilatura.html2txt extracted {len(all_content)} chars (ALL content)")
+                    pass  # trafilatura success
                     return self._clean_text_content(all_content)
             except Exception as e:
-                print(f"WARNING: html2txt failed: {str(e)}")
+                pass  # html2txt failed
             
             # STRATEGY 2: Extract with favor_recall=True (prefer more text)
             recall_content = trafilatura.extract(html_content, favor_recall=True, include_comments=True, include_tables=True)
             if recall_content and len(recall_content.strip()) > 50:
-                print(f"SUCCESS: trafilatura with favor_recall extracted {len(recall_content)} chars")
+                pass  # trafilatura recall success
                 return self._clean_text_content(recall_content)
         except ImportError:
-            print("INFO: trafilatura not available. Install with: pip install trafilatura")
+            pass  # trafilatura not available
         except Exception as e:
-            print(f"WARNING: trafilatura failed: {str(e)}")
+            pass  # trafilatura failed
         
         # METHOD 2: READABILITY-LXML (Mozilla algorithm - 80.1% F1-score)
         try:
@@ -714,12 +728,12 @@ class WebContentFetcher:
             content = soup.get_text(separator=' ', strip=True)
             
             if content and len(content.strip()) > 50:
-                print(f"SUCCESS: readability-lxml (Mozilla) extracted {len(content)} chars")
+                pass  # readability success
                 return self._clean_text_content(content)
         except ImportError:
-            print("INFO: readability-lxml not available. Install with: pip install readability-lxml")
+            pass  # readability not available
         except Exception as e:
-            print(f"WARNING: readability-lxml failed: {str(e)}")
+            pass  # readability failed
         
         # METHOD 3: SMART BEAUTIFULSOUP (Research shows: minimal removal preserves content)
         try:
@@ -729,7 +743,7 @@ class WebContentFetcher:
             for element in soup(['script', 'style', 'noscript']):
                 element.decompose()
             
-            # 2025 content selectors (research-backed priority order)
+            # Content selectors (research-backed priority order)
             content_selectors = [
                 'main',  # HTML5 semantic
                 'article',  # HTML5 semantic  
@@ -745,7 +759,7 @@ class WebContentFetcher:
                 if element:
                     content = element.get_text(separator=' ', strip=True)
                     if len(content) > 50:
-                        print(f"SUCCESS: BeautifulSoup '{selector}' extracted {len(content)} chars")
+                        pass  # BeautifulSoup success
                         return self._clean_text_content(content)
             
             # Smart body fallback - preserve main structure  
@@ -759,16 +773,16 @@ class WebContentFetcher:
                 
                 content = body.get_text(separator=' ', strip=True)
                 if len(content) > 50:
-                    print(f"SUCCESS: Smart body extraction {len(content)} chars")
+                    pass  # Smart body extraction
                     return self._clean_text_content(content)
             
             # Last resort - full document
             content = soup.get_text(separator=' ', strip=True)
-            print(f"FALLBACK: Full document {len(content)} chars")
+            pass  # Full document fallback
             return self._clean_text_content(content)
             
         except Exception as e:
-            print(f"ERROR: All extraction methods failed: {str(e)}")
+            pass  # All extraction failed
             return "Content extraction failed"
     
     def _extract_hero_content(self, html_content: str) -> str:
@@ -817,7 +831,7 @@ class WebContentFetcher:
             # Clean and combine hero parts
             if hero_parts:
                 hero_content = '\n'.join(hero_parts)
-                print(f"DEBUG: Extracted hero content: {len(hero_content)} chars")
+                pass  # Hero content extracted
                 return hero_content
             
             return ""
@@ -827,7 +841,7 @@ class WebContentFetcher:
             return ""
 
     def _clean_text_content(self, text: str) -> str:
-        """Clean and optimize extracted text (2025 best practices)"""
+        """Clean and optimize extracted text"""
         if not text:
             return ""
             
@@ -878,23 +892,93 @@ class WebContentFetcher:
         return text_content
 
     def _extract_links(self, soup: BeautifulSoup, base_url: str) -> list:
-        """Extract links from the page"""
+        """Extract links from the page with robust error handling"""
         links = []
         
-        for link in soup.find_all('a', href=True)[:100]:  # Extract ALL links for complete documentation mapping
-            href = link['href']
-            text = link.get_text().strip()
+        try:
+            # Safety check inputs
+            if not soup or not base_url:
+                pass  # Invalid soup or base_url
+                return []
             
-            # Convert relative URLs to absolute
-            absolute_url = urljoin(base_url, href)
+            # Find all links with error handling
+            try:
+                link_elements = soup.find_all('a', href=True)[:MAX_LINKS_EXTRACT]
+                pass  # Found potential links
+            except Exception as e:
+                pass  # Failed to find links
+                return []
             
-            if text and absolute_url.startswith(('http://', 'https://')):
-                links.append({
-                    'url': absolute_url,
-                    'text': text[:200]  # Longer link text for better context
-                })
-        
-        return links
+            successful_extractions = 0
+            failed_extractions = 0
+            
+            for link in link_elements:
+                try:
+                    # Safely extract href
+                    href = link.get('href', '').strip()
+                    if not href:
+                        failed_extractions += 1
+                        continue
+                    
+                    # Safely extract text with fallback
+                    try:
+                        text = link.get_text(strip=True) if link else ''
+                        # Additional safety for text processing
+                        if text is None:
+                            text = ''
+                        text = str(text).strip()
+                    except Exception as e:
+                        pass  # Failed to extract text
+                        text = ''  # Continue with empty text
+                    
+                    # Convert relative URLs to absolute with error handling
+                    try:
+                        absolute_url = urljoin(base_url, href)
+                    except Exception as e:
+                        pass  # Failed to create absolute URL
+                        failed_extractions += 1
+                        continue
+                    
+                    # Validate and filter URLs
+                    if not absolute_url:
+                        failed_extractions += 1
+                        continue
+                        
+                    # Check for valid HTTP/HTTPS URLs
+                    try:
+                        is_valid_http = absolute_url.startswith(('http://', 'https://'))
+                    except Exception:
+                        is_valid_http = False
+                    
+                    if text and is_valid_http:
+                        try:
+                            # Safely truncate text
+                            safe_text = text[:800] if len(text) > 800 else text
+                            
+                            links.append({
+                                'url': absolute_url,
+                                'text': safe_text
+                            })
+                            successful_extractions += 1
+                            
+                        except Exception as e:
+                            pass  # Failed to create link object
+                            failed_extractions += 1
+                    else:
+                        failed_extractions += 1
+                        
+                except Exception as e:
+                    pass  # Failed to process link
+                    failed_extractions += 1
+                    continue
+            
+            pass  # Link extraction completed
+            return links
+            
+        except Exception as e:
+            pass  # Critical link extraction failure
+            pass  # Return empty links
+            return []  # Always return a list, never crash
 
     def _is_valid_url(self, url: str) -> bool:
         """Validate URL format"""

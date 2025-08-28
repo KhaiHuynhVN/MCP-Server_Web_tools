@@ -1,8 +1,8 @@
-# 📦 INSTALLATION GUIDE - Web MCP 2025 Dependencies
+# 📦 INSTALLATION GUIDE - Web MCP Dependencies
 
 ## 🚀 Quick Installation
 
-### Required Dependencies for Full 2025 Features:
+### Required Dependencies for Full Features:
 
 ```bash
 # Core dependencies

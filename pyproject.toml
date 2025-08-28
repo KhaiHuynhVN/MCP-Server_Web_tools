@@ -9,13 +9,13 @@ dependencies = [
     "requests", 
     "httpx[http2]",
     "h2",  # Required for HTTP/2 support
-    "playwright",  # Modern browser automation (2025 recommended)
+    "playwright",  # Modern browser automation (recommended)
     "playwright-stealth",  # Anti-detection capabilities
     "requests-html",  # Legacy JS rendering (backup)
     "lxml-html-clean",  # Fix for lxml compatibility
-    "charset-normalizer",  # Modern charset detection (2025 standard)
+    "charset-normalizer",  # Modern charset detection
     "beautifulsoup4",
     "lxml",
-    "trafilatura",  # 2025 champion for content extraction (90.9% F1-score)
+    "trafilatura",  # Leading content extraction library (90.9% F1-score)
     "readability-lxml",  # Mozilla's algorithm (80.1% F1-score) - fallback
 ]

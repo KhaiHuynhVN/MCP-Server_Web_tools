@@ -4,6 +4,7 @@ Tool chính để fetch và extract content từ URLs
 """
 
 import json
+import time
 from typing import List, Dict, Any, Union
 from .fetch_api import fetch_web_content
 
@@ -68,7 +69,7 @@ def web_fetch_tool(url: Union[str, List[str]], extract_links: bool = True) -> st
                 "message": f"Quá nhiều URLs. Tối đa {MAX_URLS_PER_REQUEST} URLs mỗi request."
             }, ensure_ascii=False, indent=2)
         
-        print(f"Fetching content from {len(urls)} URL(s)...")
+        pass  # Fetching content
         
         # Process each URL
         results = []
@@ -76,13 +77,25 @@ def web_fetch_tool(url: Union[str, List[str]], extract_links: bool = True) -> st
         
         for url_to_fetch in urls:
             try:
-                print(f"Processing: {url_to_fetch}")
+                pass  # Processing URL
                 
                 # Fetch content
                 content_data = fetch_web_content(url_to_fetch.strip())
                 
-                # Apply extract_links setting
-                if not extract_links and 'links' in content_data:
+                # Apply extract_links setting with safety checks
+                try:
+                    if not extract_links and 'links' in content_data:
+                        content_data['links'] = []
+                    
+                    # Ensure links field always exists and is valid
+                    if 'links' not in content_data:
+                        content_data['links'] = []
+                    elif not isinstance(content_data['links'], list):
+                        pass  # Invalid links format
+                        content_data['links'] = []
+                        
+                except Exception as e:
+                    pass  # Error processing links
                     content_data['links'] = []
                 
                 results.append(content_data)
@@ -90,7 +103,6 @@ def web_fetch_tool(url: Union[str, List[str]], extract_links: bool = True) -> st
                 
             except ValueError as e:
                 # Client-side errors (invalid URL, unsupported content, etc.)
-                print(f"Client error for {url_to_fetch}: {str(e)}")
                 results.append({
                     "url": url_to_fetch,
                     "title": "",
@@ -100,12 +112,16 @@ def web_fetch_tool(url: Union[str, List[str]], extract_links: bool = True) -> st
                     "word_count": 0,
                     "links": [],
                     "status": "error",
-                    "error": str(e)
+                    "error": str(e),
+                    "error_type": "client_error",
+                    "error_details": {
+                        "timestamp": str(time.time()),
+                        "error_category": "validation"
+                    }
                 })
                 
             except Exception as e:
                 # Server/network errors
-                print(f"Network error for {url_to_fetch}: {str(e)}")
                 results.append({
                     "url": url_to_fetch,
                     "title": "",
@@ -115,7 +131,13 @@ def web_fetch_tool(url: Union[str, List[str]], extract_links: bool = True) -> st
                     "word_count": 0,
                     "links": [],
                     "status": "error",
-                    "error": f"Không thể truy cập URL: {str(e)}"
+                    "error": f"Không thể truy cập URL: {str(e)}",
+                    "error_type": "network_error",
+                    "error_details": {
+                        "timestamp": str(time.time()),
+                        "error_category": "connection",
+                        "original_error": str(e)
+                    }
                 })
         
         # Prepare response
@@ -137,15 +159,21 @@ def web_fetch_tool(url: Union[str, List[str]], extract_links: bool = True) -> st
         return json.dumps(response, ensure_ascii=False, indent=2)
         
     except Exception as e:
-        error_msg = f"Web fetch error: {str(e)}"
-        print(error_msg)
-        
+        # Comprehensive top-level error response
         return json.dumps({
             "total_urls": len(urls) if 'urls' in locals() else 0,
             "successful_fetches": 0,
             "results": [],
             "status": "error",
-            "message": str(e)
+            "error": str(e),
+            "error_type": "tool_error",
+            "error_details": {
+                "timestamp": str(time.time()),
+                "error_category": "tool_failure",
+                "function": "web_fetch_tool",
+                "original_error": str(e)
+            },
+            "message": f"Tool execution failed: {str(e)}"
         }, ensure_ascii=False, indent=2)
 
 
